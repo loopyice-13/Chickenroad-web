@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chicken Road 2 Predictor</title>
+
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    background: #0b0b0b;
+    color: #fff;
+  }
+
+  #bgCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 390px;
+    height: 720px;
+    background: rgba(12,12,12,0.95);
+    border-radius: 22px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,.8);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .header {
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: .4px;
+    margin-bottom: 16px;
+  }
+
+  .road {
+    flex: 1;
+    background: #000;
+    border-radius: 18px;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .step {
+    background: #111;
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: fadeIn .3s ease;
+  }
+
+  .cross {
+    font-size: 18px;
+    font-weight: 600;
+    color: #00ff99;
+  }
+
+  .wait {
+    font-size: 14px;
+    opacity: .8;
+  }
+
+  .cashout {
+    background: linear-gradient(135deg, #ffd166, #ffb703);
+    color: #000;
+    font-weight: 700;
+    text-align: center;
+    padding: 16px;
+    border-radius: 16px;
+    margin-top: 6px;
+    animation: pop .35s ease;
+  }
+
+  button {
+    margin-top: 16px;
+    padding: 16px;
+    border-radius: 18px;
+    border: none;
+    background: linear-gradient(135deg, #00ff99, #00cc77);
+    color: #000;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  button:disabled {
+    background: #444;
+    cursor: not-allowed;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pop {
+    from { transform: scale(.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* ---- ACCESS KEY MODAL (Replit Core Style) ---- */
+  #accessModal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(11,11,11,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    opacity: 0;
+    animation: fadeInModal 0.4s forwards;
+  }
+
+  @keyframes fadeInModal {
+    to { opacity: 1; }
+  }
+
+  #modalContent {
+    background: #121212;
+    padding: 30px 36px;
+    border-radius: 24px;
+    text-align: center;
+    width: 90%;
+    max-width: 340px;
+    box-shadow: 0 15px 40px rgba(0,255,150,0.35);
+    border: 2px solid #00ff99;
+  }
+
+  #modalContent h2 {
+    color: #00ff99;
+    margin-bottom: 20px;
+    font-weight: 600;
+  }
+
+  #accessInput {
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    border: none;
+    margin-bottom: 18px;
+    font-size: 16px;
+    background: #1a1a1a;
+    color: #fff;
+  }
+
+  #accessInput:focus {
+    outline: 2px solid #00ff99;
+    box-shadow: 0 0 10px #00ff99;
+  }
+
+  #submitKey {
+    padding: 16px;
+    width: 100%;
+    font-weight: 700;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #00ff99, #00cc77);
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+
+  #submitKey:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,255,150,0.4);
+  }
+
+  #errorMsg {
+    color: #ff5252;
+    margin-top: 10px;
+    font-size: 14px;
+    display: none;
+  }
+</style>
+</head>
+
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="app">
+  <div class="header">🐔 Chicken Road 2</div>
+
+  <div class="road" id="road">
+    <div style="opacity:.4;text-align:center;margin-top:40px;">
+      Press Predict Round
+    </div>
+  </div>
+
+  <button id="predictBtn" onclick="predict()" disabled>PREDICT ROUND</button>
+
+  <!-- ACCESS KEY MODAL -->
+  <div id="accessModal">
+    <div id="modalContent">
+      <h2>Access Required</h2>
+      <input type="text" id="accessInput" placeholder="Enter access key">
+      <button id="submitKey">Unlock</button>
+      <div id="errorMsg">Invalid key!</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==== ACCESS KEY LOGIC ====
+const VALID_KEY = "MASTERKEY2026"; // New key
+const predictBtn = document.getElementById("predictBtn");
+const accessModal = document.getElementById("accessModal");
+const accessInput = document.getElementById("accessInput");
+const errorMsg = document.getElementById("errorMsg");
+
+document.getElementById("submitKey").addEventListener("click", () => {
+  const key = accessInput.value.trim();
+  if(key === VALID_KEY){
+    accessModal.style.display = "none";
+    predictBtn.disabled = false;
+    document.getElementById("road").innerHTML = `<div style="opacity:.6;text-align:center;margin-top:40px;">Access granted! Press Predict Round</div>`;
+  } else {
+    errorMsg.style.display = "block";
+  }
+});
+
+accessInput.addEventListener("keypress", (e) => {
+  if(e.key === "Enter") document.getElementById("submitKey").click();
+});
+
+// ==== ROAD LOGIC WITH AUTO-STEP + RANDOM COOLDOWN 30–60s ====
+let cooldown = false;
+function predict() {
+  if(cooldown) return;
+
+  const road = document.getElementById("road");
+  road.innerHTML = "";
+
+  const MIN_CROSS = 3;
+  const MAX_CROSS = 6;
+  const steps = Math.floor(Math.random() * (MAX_CROSS - MIN_CROSS + 1)) + MIN_CROSS;
+
+  // Generate wait times for each step (6–10s)
+  const waitTimes = [];
+  for(let i=0;i<steps;i++){
+    waitTimes.push(Math.floor(Math.random() * 5) + 6);
+  }
+
+  // START RANDOM COOLDOWN 30–60s
+  cooldown = true;
+  const cooldownTime = Math.floor(Math.random() * 31) + 30;
+  let remaining = cooldownTime;
+  predictBtn.disabled = true;
+  const originalText = "PREDICT ROUND";
+  const cooldownInterval = setInterval(() => {
+    predictBtn.textContent = `Cooldown ${remaining}s`;
+    remaining--;
+    if(remaining < 0){
+      clearInterval(cooldownInterval);
+      predictBtn.textContent = originalText;
+      predictBtn.disabled = false;
+      cooldown = false;
+    }
+  }, 1000);
+
+  let i = 0;
+  function nextStep() {
+    if(i < steps){
+      const step = document.createElement("div");
+      step.className = "step";
+      step.innerHTML = `
+        <div class="cross">CROSS ×${i+1}</div>
+        <div class="wait">WAIT ${waitTimes[i]}s</div>
+      `;
+      road.appendChild(step);
+      road.scrollTop = road.scrollHeight;
+      setTimeout(nextStep, waitTimes[i]*1000);
+      i++;
+    } else {
+      const cash = document.createElement("div");
+      cash.className = "cashout";
+      cash.textContent = "CASHOUT";
+      road.appendChild(cash);
+      road.scrollTop = road.scrollHeight;
+    }
+  }
+
+  nextStep();
+}
+
+// ==== LIVE BACKGROUND ====
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+class Particle {
+  constructor() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.size = Math.random() * 2 + 1;
+    this.speedX = (Math.random() - 0.5) * 0.5;
+    this.speedY = (Math.random() - 0.5) * 0.5;
+    this.alpha = Math.random() * 0.5 + 0.3;
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    if (this.x < 0) this.x = canvas.width;
+    if (this.x > canvas.width) this.x = 0;
+    if (this.y < 0) this.y = canvas.height;
+    if (this.y > canvas.height) this.y = 0;
+  }
+  draw() {
+    ctx.fillStyle = `rgba(0,255,150,${this.alpha})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function initParticles(num = 120) {
+  particles = [];
+  for(let i=0; i<num; i++) particles.push(new Particle());
+}
+initParticles();
+
+function animate() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let p of particles) {
+    p.update();
+    p.draw();
+  }
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>
