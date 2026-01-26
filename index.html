@@ -1,204 +1,180 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chicken Road 2 Predictor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chicken Road 2 - Pure CROSS</title>
+
 <style>
-  body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;background:#0b0b0b;color:#fff}
-  #bgCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1}
-  .app{width:100%;max-width:390px;height:720px;background:rgba(12,12,12,0.95);border-radius:22px;padding:20px;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.8);overflow:hidden;position:relative}
-  .header{text-align:center;font-weight:600;letter-spacing:.4px;margin-bottom:16px}
-  .road{flex:1;background:#000;border-radius:18px;padding:16px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
-  .step{background:#111;border-radius:14px;padding:14px;display:flex;justify-content:center;align-items:center;font-weight:600;animation:fadeIn .3s ease}
-  .cashout{background:linear-gradient(135deg,#ffd166,#ffb703);color:#000;font-weight:700;text-align:center;padding:16px;border-radius:16px;margin-top:6px;animation:pop .35s ease}
-  button{margin-top:16px;padding:16px;border-radius:18px;border:none;background:linear-gradient(135deg,#00ff99,#00cc77);color:#000;font-size:16px;font-weight:700;cursor:pointer}
-  button:disabled{background:#444;cursor:not-allowed}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes pop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
-  /* MODALS */
-  #accessModal, #siteModal, #connectingModal{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(11,11,11,0.9);display:flex;justify-content:center;align-items:center;z-index:10}
-  .modalContent{background:#121212;padding:30px 36px;border-radius:24px;text-align:center;width:90%;max-width:340px;box-shadow:0 15px 40px rgba(0,255,150,0.35);border:2px solid #00ff99}
-  .modalContent h2{color:#00ff99;margin-bottom:20px;font-weight:600}
-  .modalContent input,.modalContent select{width:100%;padding:16px;border-radius:16px;border:none;margin-bottom:18px;font-size:16px;background:#1a1a1a;color:#fff}
-  .modalContent input:focus,.modalContent select:focus{outline:2px solid #00ff99;box-shadow:0 0 10px #00ff99}
-  .modalContent button{padding:16px;width:100%;font-weight:700;border:none;border-radius:16px;background:linear-gradient(135deg,#00ff99,#00cc77);cursor:pointer;font-size:16px}
-  .modalContent button:hover{transform:translateY(-2px);box-shadow:0 6px 15px rgba(0,255,150,0.4)}
-  .errorMsg{color:#ff5252;margin-top:10px;font-size:14px;display:none}
+body{margin:0;background:#0b0b0b;font-family:system-ui;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh}
+canvas{position:fixed;inset:0;z-index:-1}
+.app{width:390px;height:720px;background:#0c0c0c;border-radius:22px;padding:20px;display:flex;flex-direction:column}
+.header{text-align:center;margin-bottom:10px}
+.road{flex:1;background:#000;border-radius:16px;padding:14px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.step{background:#111;padding:14px;border-radius:12px;text-align:center;font-weight:700}
+.cashout{background:#ffd166;color:#000;padding:16px;border-radius:14px;text-align:center;font-weight:800}
+button{margin-top:10px;padding:16px;border-radius:16px;border:none;background:#00ff99;font-weight:700}
+button:disabled{background:#444}
+.modal{position:absolute;inset:0;background:#000c;display:flex;justify-content:center;align-items:center}
+.box{background:#111;padding:24px;border-radius:20px;width:85%;border:2px solid #00ff99;text-align:center}
+input,select{width:100%;padding:14px;margin:10px 0;background:#222;border:none;border-radius:12px;color:#fff}
+.err{color:#ff4444;font-size:13px;display:none}
 </style>
 </head>
-<body>
-<canvas id="bgCanvas"></canvas>
-<div class="app">
-  <div class="header">🐔 Chicken Road 2</div>
-  <div class="road" id="road">
-    <div style="opacity:.4;text-align:center;margin-top:40px;">Press Predict Round</div>
-  </div>
-  <button id="predictBtn" onclick="predict()" disabled>PREDICT ROUND</button>
 
-  <!-- ACCESS KEY MODAL -->
-  <div id="accessModal">
-    <div class="modalContent">
-      <h2>Access Required</h2>
-      <input type="text" id="accessInput" placeholder="Enter access key">
-      <button id="submitKey">Unlock</button>
-      <div id="errorMsg" class="errorMsg">Invalid key!</div>
-    </div>
-  </div>
+<body>
+
+<canvas id="bg"></canvas>
+
+<div class="app">
+
+<div class="header">🐔 Chicken Road 2</div>
+
+<div class="road" id="road"></div>
+
+<button id="predict">PREDICT</button>
+
+<!-- ACCESS KEY -->
+<div id="keyModal" class="modal">
+<div class="box">
+<h3>Access Key</h3>
+<input id="keyInput">
+<button id="unlock">Unlock</button>
+<div id="keyErr" class="err">Wrong key</div>
+</div>
+</div>
+
 </div>
 
 <script>
-const VALID_KEY = "MASTERKEY2026";
-const predictBtn = document.getElementById("predictBtn");
-const accessModal = document.getElementById("accessModal");
-const accessInput = document.getElementById("accessInput");
-const errorMsg = document.getElementById("errorMsg");
+const KEY="MASTERKEY2026";
+const road=document.getElementById("road");
+const predict=document.getElementById("predict");
 let cooldown=false;
 
-// Check if site/phone already saved
-if(localStorage.getItem("site") && localStorage.getItem("phone")){
-  accessModal.style.display = "none";
-  predictBtn.disabled = false;
-  document.getElementById("road").innerHTML = `<div style="opacity:.6;text-align:center;margin-top:40px;">Welcome back! Press Predict Round</div>`;
+// INIT
+window.onload=()=>{
+ if(localStorage.key){
+   keyModal.remove();
+   checkSite();
+ }else{
+   road.innerHTML="Enter access key";
+   predict.disabled=true;
+ }
+};
+
+// ACCESS KEY
+unlock.onclick=()=>{
+ if(keyInput.value===KEY){
+   localStorage.key=1;
+   keyModal.remove();
+   checkSite();
+ }else keyErr.style.display="block";
+};
+
+// SITE + PHONE CHECK
+function checkSite(){
+ if(localStorage.site && localStorage.phone){
+   road.innerHTML="Connected to "+localStorage.site;
+   predict.disabled=false;
+ }else sitePopup();
 }
 
-// Access key
-document.getElementById("submitKey").addEventListener("click",()=>{
-  const key=accessInput.value.trim();
-  if(key===VALID_KEY){
-    accessModal.style.display="none";
-    if(!localStorage.getItem("site") || !localStorage.getItem("phone")) showSiteModal();
-    else { predictBtn.disabled=false; document.getElementById("road").innerHTML=`<div style="opacity:.6;text-align:center;margin-top:40px;">Press Predict Round</div>`;}
-  }else errorMsg.style.display="block";
-});
-accessInput.addEventListener("keypress",(e)=>{if(e.key==="Enter") document.getElementById("submitKey").click();});
+function sitePopup(){
+ document.body.insertAdjacentHTML("beforeend",`
+<div class=modal id=site>
+<div class=box>
+<h3>Enter Betting Site & Germany Phone</h3>
+<select id=s>
+<option value="">Select site</option>
+<option>Melbet</option>
+<option>1xbet</option>
+<option>Betway</option>
+</select>
+<input id=p placeholder="+49XXXXXXXXX">
+<button id=save>Save</button>
+<div id=e class=err>Enter valid German phone</div>
+</div></div>`);
 
-// Site selection modal
-function showSiteModal(){
-  const modalHTML=`
-    <div id="siteModal">
-      <div class="modalContent">
-        <h2>Select Betting Site</h2>
-        <select id="siteSelect">
-          <option value="">Choose site</option>
-          <option value="Melbet">Melbet</option>
-          <option value="1xbet">1xbet</option>
-          <option value="BetWay">BetWay</option>
-        </select>
-        <input id="phoneInput" type="text" placeholder="German phone number">
-        <button id="saveSiteBtn">Save</button>
-        <div id="siteError" class="errorMsg">Please fill all fields!</div>
-      </div>
-    </div>`;
-  document.body.insertAdjacentHTML('beforeend',modalHTML);
-
-  document.getElementById('saveSiteBtn').addEventListener('click',()=>{
-    const site=document.getElementById('siteSelect').value;
-    const phone=document.getElementById('phoneInput').value.trim();
-    const error=document.getElementById('siteError');
-    const germanyRegex=/^(?:\+49|0)\d{9,14}$/;
-    if(site && germanyRegex.test(phone)){
-      localStorage.setItem("site",site);
-      localStorage.setItem("phone",phone);
-      document.getElementById('siteModal').remove();
-      showConnectingPopup(site,phone);
-    }else{error.textContent="Please enter a valid German number!"; error.style.display='block';}
-  });
+ save.onclick=()=>{
+   const site=s.value;
+   const phone=p.value.trim();
+   const re=/^(?:\+49|0)\d{9,14}$/;
+   if(site && re.test(phone)){
+     localStorage.site=site;
+     localStorage.phone=phone;
+     site.remove();
+     road.innerHTML="Connecting...";
+     setTimeout(()=>{
+       road.innerHTML="Connected to "+site;
+       predict.disabled=false;
+     },1500);
+   }else e.style.display="block";
+ };
 }
 
-// Connecting popup
-function showConnectingPopup(site,phone){
-  const connectingHTML=`
-    <div id="connectingModal">
-      <div class="modalContent">
-        <h2>Connecting to ${site}...</h2>
-        <div style="height:10px;width:100%;background:#1a1a1a;border-radius:10px;overflow:hidden;margin-top:10px;">
-          <div id="progressBar" style="width:0%;height:100%;background:#00ff99;"></div>
-        </div>
-      </div>
-    </div>`;
-  document.body.insertAdjacentHTML('beforeend',connectingHTML);
+// PREDICT PURE CROSS
+predict.onclick=()=>{
+ if(cooldown) return;
 
-  let progress=0;
-  const interval=setInterval(()=>{
-    progress+=Math.random()*10;
-    if(progress>=100) progress=100;
-    document.getElementById('progressBar').style.width=progress+'%';
-    if(progress>=100){
-      clearInterval(interval);
-      document.getElementById('connectingModal').remove();
-      predictBtn.disabled=false;
-      document.getElementById("road").innerHTML=`<div style="opacity:.6;text-align:center;margin-top:40px;">Connected to ${site}. Press Predict Round</div>`;
-    }
-  },300);
+ road.innerHTML="";
+
+ let crosses=Math.floor(Math.random()*6)+3; // 3–8 CROSS
+ cooldown=true;
+ predict.disabled=true;
+
+ let cd=Math.floor(Math.random()*31)+30;
+ let timer=setInterval(()=>{
+ predict.textContent="Cooldown "+cd--;
+ if(cd<0){
+   clearInterval(timer);
+   predict.textContent="PREDICT";
+   predict.disabled=false;
+   cooldown=false;
+ }
+ },1000);
+
+ let i=0;
+ function show(){
+   if(i<crosses){
+     const d=document.createElement("div");
+     d.className="step";
+     d.textContent="CROSS";
+     road.appendChild(d);
+     road.scrollTop=9999;
+
+     navigator.vibrate?.([200,100,200]);
+
+     i++;
+     setTimeout(show,Math.random()*2000+3000); // 3–5 sec spacing
+   }else{
+     const c=document.createElement("div");
+     c.className="cashout";
+     c.textContent="CASHOUT";
+     road.appendChild(c);
+   }
+ }
+ show();
 }
 
-// Predict logic (patient CROSS signals)
-function predict(){
-  if(cooldown) return;
-  const road=document.getElementById("road");
-  road.innerHTML="";
-  const totalSignals=Math.floor(Math.random()*3)+5; // 5–7
-  let crossCount=0,i=0;
-  cooldown=true;
-  const cooldownTime=Math.floor(Math.random()*31)+30;
-  let remaining=cooldownTime;
-  predictBtn.disabled=true;
-  const originalText="PREDICT ROUND";
-  const cooldownInterval=setInterval(()=>{
-    predictBtn.textContent=`Cooldown ${remaining}s`;
-    remaining--;
-    if(remaining<0){clearInterval(cooldownInterval); predictBtn.textContent=originalText; predictBtn.disabled=false; cooldown=false;}
-  },1000);
-
-  function nextSignal(){
-    if(i<totalSignals){
-      let randSignal;
-      if(totalSignals-i===3-crossCount) randSignal="CROSS";
-      else randSignal=Math.random()<0.5?"CROSS":"WAIT";
-
-      if(randSignal==="CROSS"){
-        const step=document.createElement("div");
-        step.className="step";
-        step.textContent="CROSS";
-        road.appendChild(step);
-        road.scrollTop=road.scrollHeight;
-        crossCount++;
-        if(navigator.vibrate) navigator.vibrate([200,100,200]);
-        setTimeout(nextSignal,1200); // patient delay
-      }else{
-        setTimeout(()=>{
-          speechSynthesis.cancel();
-          const utter=new SpeechSynthesisUtterance("Wait");
-          utter.lang="en-US"; utter.pitch=1; utter.rate=1;
-          speechSynthesis.speak(utter);
-        },100);
-        setTimeout(nextSignal,1200);
-      }
-      i++;
-    }else{
-      const cash=document.createElement("div");
-      cash.className="cashout";
-      cash.textContent="CASHOUT";
-      road.appendChild(cash);
-      road.scrollTop=road.scrollHeight;
-    }
-  }
-  nextSignal();
-}
-
-// Background particles
-const canvas=document.getElementById('bgCanvas');
-const ctx=canvas.getContext('2d');
-let particles=[];
-function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
-window.addEventListener('resize',resizeCanvas);
-resizeCanvas();
-class Particle{constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.size=Math.random()*2+1;this.speedX=(Math.random()-0.5)*0.5;this.speedY=(Math.random()-0.5)*0.5;this.alpha=Math.random()*0.5+0.3;}update(){this.x+=this.speedX;this.y+=this.speedY;if(this.x<0)this.x=canvas.width;if(this.x>canvas.width)this.x=0;if(this.y<0)this.y=canvas.height;if(this.y>canvas.height)this.y=0;}draw(){ctx.fillStyle=`rgba(0,255,150,${this.alpha})`;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();}}
-function initParticles(num=120){particles=[];for(let i=0;i<num;i++)particles.push(new Particle());}
-initParticles();
-function animate(){ctx.clearRect(0,0,canvas.width,canvas.height);for(let p of particles){p.update();p.draw();}requestAnimationFrame(animate);}
-animate();
+// BACKGROUND PARTICLES
+const cv=document.getElementById("bg");
+const ctx=cv.getContext("2d");
+function resize(){cv.width=innerWidth;cv.height=innerHeight}
+resize();onresize=resize;
+let pts=[...Array(80)].map(()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,vx:Math.random()-.5,vy:Math.random()-.5}));
+(function loop(){
+ ctx.clearRect(0,0,cv.width,cv.height);
+ pts.forEach(p=>{
+ p.x+=p.vx;p.y+=p.vy;
+ if(p.x<0)p.x=cv.width;if(p.x>cv.width)p.x=0;
+ if(p.y<0)p.y=cv.height;if(p.y>cv.height)p.y=0;
+ ctx.fillStyle="rgba(0,255,150,.4)";
+ ctx.beginPath();ctx.arc(p.x,p.y,2,0,7);ctx.fill();
+ });
+ requestAnimationFrame(loop);
+})();
 </script>
+
 </body>
 </html>
