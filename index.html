@@ -2,178 +2,211 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Chicken Road 2 - Pure CROSS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chicken Road 2</title>
 
 <style>
-body{margin:0;background:#0b0b0b;font-family:system-ui;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh}
-canvas{position:fixed;inset:0;z-index:-1}
-.app{width:390px;height:720px;background:#0c0c0c;border-radius:22px;padding:20px;display:flex;flex-direction:column}
-.header{text-align:center;margin-bottom:10px}
-.road{flex:1;background:#000;border-radius:16px;padding:14px;overflow:auto;display:flex;flex-direction:column;gap:10px}
-.step{background:#111;padding:14px;border-radius:12px;text-align:center;font-weight:700}
-.cashout{background:#ffd166;color:#000;padding:16px;border-radius:14px;text-align:center;font-weight:800}
-button{margin-top:10px;padding:16px;border-radius:16px;border:none;background:#00ff99;font-weight:700}
+body{
+margin:0;
+background:#050505;
+font-family:system-ui;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+color:white;
+}
+
+.app{
+width:380px;
+height:700px;
+background:#0c0c0c;
+border-radius:22px;
+padding:20px;
+display:flex;
+flex-direction:column;
+box-shadow:0 0 40px #00ff99;
+position:relative;
+}
+
+.header{text-align:center;font-weight:700;margin-bottom:6px}
+
+.sitebar{
+text-align:center;
+font-size:14px;
+opacity:.7;
+margin-bottom:8px;
+}
+
+.road{
+flex:1;
+background:black;
+border-radius:18px;
+padding:12px;
+overflow:auto;
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+.step{
+background:#111;
+padding:14px;
+border-radius:14px;
+text-align:center;
+font-weight:700;
+}
+
+.cashout{
+background:linear-gradient(135deg,#ffd166,#ffb703);
+color:black;
+padding:16px;
+border-radius:16px;
+text-align:center;
+font-weight:800;
+}
+
+button{
+margin-top:12px;
+padding:16px;
+border-radius:18px;
+border:none;
+background:#00ff99;
+font-weight:700;
+}
+
 button:disabled{background:#444}
-.modal{position:absolute;inset:0;background:#000c;display:flex;justify-content:center;align-items:center}
-.box{background:#111;padding:24px;border-radius:20px;width:85%;border:2px solid #00ff99;text-align:center}
-input,select{width:100%;padding:14px;margin:10px 0;background:#222;border:none;border-radius:12px;color:#fff}
-.err{color:#ff4444;font-size:13px;display:none}
+
+.modal{
+position:absolute;
+inset:0;
+background:#000d;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.box{
+background:#111;
+padding:25px;
+border-radius:20px;
+width:85%;
+text-align:center;
+}
+
+input{
+width:100%;
+padding:14px;
+border-radius:14px;
+border:none;
+margin-top:12px;
+background:#222;
+color:white;
+}
 </style>
 </head>
 
 <body>
 
-<canvas id="bg"></canvas>
-
 <div class="app">
 
 <div class="header">🐔 Chicken Road 2</div>
+<div class="sitebar">Connected site: <b id="site">Paripesa</b></div>
 
-<div class="road" id="road"></div>
+<div class="road" id="road">
+<div style="opacity:.4;text-align:center;margin-top:40px;">Waiting…</div>
+</div>
 
-<button id="predict">PREDICT</button>
+<button id="predict" disabled>PREDICT</button>
 
-<!-- ACCESS KEY -->
-<div id="keyModal" class="modal">
+<div id="setup" class="modal">
 <div class="box">
-<h3>Access Key</h3>
-<input id="keyInput">
-<button id="unlock">Unlock</button>
-<div id="keyErr" class="err">Wrong key</div>
+<h3>Connect Account</h3>
+
+<div>Betting Site: <b>Paripesa</b></div>
+
+<input id="phone" placeholder="German phone (+49...)" />
+
+<button onclick="save()">Save</button>
 </div>
 </div>
 
 </div>
 
 <script>
-const KEY="MASTERKEY2026";
-const road=document.getElementById("road");
+
 const predict=document.getElementById("predict");
-let cooldown=false;
+const road=document.getElementById("road");
+const setup=document.getElementById("setup");
 
-// INIT
-window.onload=()=>{
- if(localStorage.key){
-   keyModal.remove();
-   checkSite();
- }else{
-   road.innerHTML="Enter access key";
-   predict.disabled=true;
- }
+if(localStorage.phone){
+setup.style.display="none";
+predict.disabled=false;
+}
+
+function save(){
+let phone=document.getElementById("phone").value.trim();
+
+if(!/^(\+49|0)\d{9,13}$/.test(phone)){
+alert("German number only");
+return;
+}
+
+localStorage.phone=phone;
+setup.style.display="none";
+predict.disabled=false;
+}
+
+let busy=false;
+
+predict.onclick=async()=>{
+
+if(busy)return;
+busy=true;
+predict.disabled=true;
+road.innerHTML="";
+
+let rare=Math.random()<0.08;
+let crosses=rare?rand(16,20):rand(3,8);
+
+for(let i=0;i<crosses;i++){
+
+await wait(rand(3000,5000));
+
+navigator.vibrate?.(300);
+
+let d=document.createElement("div");
+d.className="step";
+d.textContent="🐔 CROSS";
+road.appendChild(d);
+road.scrollTop=9999;
+}
+
+await wait(1500);
+
+let c=document.createElement("div");
+c.className="cashout";
+c.textContent="💰 CASHOUT";
+road.appendChild(c);
+
+let cd=rand(30,60);
+
+let timer=setInterval(()=>{
+predict.textContent="Cooldown "+cd+"s";
+cd--;
+if(cd<0){
+clearInterval(timer);
+predict.textContent="PREDICT";
+predict.disabled=false;
+busy=false;
+}
+},1000);
+
 };
 
-// ACCESS KEY
-unlock.onclick=()=>{
- if(keyInput.value===KEY){
-   localStorage.key=1;
-   keyModal.remove();
-   checkSite();
- }else keyErr.style.display="block";
-};
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
 
-// SITE + PHONE CHECK
-function checkSite(){
- if(localStorage.site && localStorage.phone){
-   road.innerHTML="Connected to "+localStorage.site;
-   predict.disabled=false;
- }else sitePopup();
-}
-
-function sitePopup(){
- document.body.insertAdjacentHTML("beforeend",`
-<div class=modal id=site>
-<div class=box>
-<h3>Enter Betting Site & Germany Phone</h3>
-<select id=s>
-<option value="">Select site</option>
-<option>Melbet</option>
-<option>1xbet</option>
-<option>Betway</option>
-</select>
-<input id=p placeholder="+49XXXXXXXXX">
-<button id=save>Save</button>
-<div id=e class=err>Enter valid German phone</div>
-</div></div>`);
-
- save.onclick=()=>{
-   const site=s.value;
-   const phone=p.value.trim();
-   const re=/^(?:\+49|0)\d{9,14}$/;
-   if(site && re.test(phone)){
-     localStorage.site=site;
-     localStorage.phone=phone;
-     site.remove();
-     road.innerHTML="Connecting...";
-     setTimeout(()=>{
-       road.innerHTML="Connected to "+site;
-       predict.disabled=false;
-     },1500);
-   }else e.style.display="block";
- };
-}
-
-// PREDICT PURE CROSS
-predict.onclick=()=>{
- if(cooldown) return;
-
- road.innerHTML="";
-
- let crosses=Math.floor(Math.random()*6)+3; // 3–8 CROSS
- cooldown=true;
- predict.disabled=true;
-
- let cd=Math.floor(Math.random()*31)+30;
- let timer=setInterval(()=>{
- predict.textContent="Cooldown "+cd--;
- if(cd<0){
-   clearInterval(timer);
-   predict.textContent="PREDICT";
-   predict.disabled=false;
-   cooldown=false;
- }
- },1000);
-
- let i=0;
- function show(){
-   if(i<crosses){
-     const d=document.createElement("div");
-     d.className="step";
-     d.textContent="CROSS";
-     road.appendChild(d);
-     road.scrollTop=9999;
-
-     navigator.vibrate?.([200,100,200]);
-
-     i++;
-     setTimeout(show,Math.random()*2000+3000); // 3–5 sec spacing
-   }else{
-     const c=document.createElement("div");
-     c.className="cashout";
-     c.textContent="CASHOUT";
-     road.appendChild(c);
-   }
- }
- show();
-}
-
-// BACKGROUND PARTICLES
-const cv=document.getElementById("bg");
-const ctx=cv.getContext("2d");
-function resize(){cv.width=innerWidth;cv.height=innerHeight}
-resize();onresize=resize;
-let pts=[...Array(80)].map(()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,vx:Math.random()-.5,vy:Math.random()-.5}));
-(function loop(){
- ctx.clearRect(0,0,cv.width,cv.height);
- pts.forEach(p=>{
- p.x+=p.vx;p.y+=p.vy;
- if(p.x<0)p.x=cv.width;if(p.x>cv.width)p.x=0;
- if(p.y<0)p.y=cv.height;if(p.y>cv.height)p.y=0;
- ctx.fillStyle="rgba(0,255,150,.4)";
- ctx.beginPath();ctx.arc(p.x,p.y,2,0,7);ctx.fill();
- });
- requestAnimationFrame(loop);
-})();
 </script>
 
 </body>
