@@ -7,101 +7,34 @@
 
 <style>
 body{
-margin:0;
-background:#050505;
-font-family:system-ui;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
-color:white;
+margin:0;background:#050505;font-family:system-ui;
+display:flex;justify-content:center;align-items:center;height:100vh;color:white;
 }
-
 .app{
-width:380px;
-height:700px;
-background:#0c0c0c;
-border-radius:22px;
-padding:20px;
-display:flex;
-flex-direction:column;
-box-shadow:0 0 40px #00ff99;
-position:relative;
+width:380px;height:700px;background:#0c0c0c;border-radius:22px;padding:20px;
+display:flex;flex-direction:column;box-shadow:0 0 40px #00ff99;position:relative;
 }
-
 .header{text-align:center;font-weight:700;margin-bottom:6px}
-
-.sitebar{
-text-align:center;
-font-size:14px;
-opacity:.7;
-margin-bottom:8px;
-}
-
+.sitebar{text-align:center;font-size:14px;opacity:.7;margin-bottom:8px}
 .road{
-flex:1;
-background:black;
-border-radius:18px;
-padding:12px;
-overflow:auto;
-display:flex;
-flex-direction:column;
-gap:10px;
+flex:1;background:black;border-radius:18px;padding:12px;overflow:auto;
+display:flex;flex-direction:column;gap:10px;
 }
-
-.step{
-background:#111;
-padding:14px;
-border-radius:14px;
-text-align:center;
-font-weight:700;
-}
-
+.step{background:#111;padding:14px;border-radius:14px;text-align:center;font-weight:700}
 .cashout{
-background:linear-gradient(135deg,#ffd166,#ffb703);
-color:black;
-padding:16px;
-border-radius:16px;
-text-align:center;
-font-weight:800;
+background:linear-gradient(135deg,#ffd166,#ffb703);color:black;padding:16px;
+border-radius:16px;text-align:center;font-weight:800;
 }
-
 button{
-margin-top:12px;
-padding:16px;
-border-radius:18px;
-border:none;
-background:#00ff99;
-font-weight:700;
+margin-top:12px;padding:16px;border-radius:18px;border:none;background:#00ff99;font-weight:700
 }
-
 button:disabled{background:#444}
-
 .modal{
-position:absolute;
-inset:0;
-background:#000d;
-display:flex;
-justify-content:center;
-align-items:center;
+position:absolute;inset:0;background:#000d;display:flex;justify-content:center;align-items:center
 }
-
-.box{
-background:#111;
-padding:25px;
-border-radius:20px;
-width:85%;
-text-align:center;
-}
-
+.box{background:#111;padding:25px;border-radius:20px;width:85%;text-align:center}
 input{
-width:100%;
-padding:14px;
-border-radius:14px;
-border:none;
-margin-top:12px;
-background:#222;
-color:white;
+width:100%;padding:14px;border-radius:14px;border:none;margin-top:12px;background:#222;color:white
 }
 </style>
 </head>
@@ -109,104 +42,106 @@ color:white;
 <body>
 
 <div class="app">
+  <div class="header">🐔 Chicken Road 2</div>
+  <div class="sitebar">Connected site: <b>Paripesa</b></div>
 
-<div class="header">🐔 Chicken Road 2</div>
-<div class="sitebar">Connected site: <b id="site">Paripesa</b></div>
+  <div class="road" id="road">
+    <div style="opacity:.4;text-align:center;margin-top:40px;">Waiting…</div>
+  </div>
 
-<div class="road" id="road">
-<div style="opacity:.4;text-align:center;margin-top:40px;">Waiting…</div>
-</div>
+  <button id="predict" disabled>PREDICT</button>
 
-<button id="predict" disabled>PREDICT</button>
-
-<div id="setup" class="modal">
-<div class="box">
-<h3>Connect Account</h3>
-
-<div>Betting Site: <b>Paripesa</b></div>
-
-<input id="phone" placeholder="German phone (+49...)" />
-
-<button onclick="save()">Save</button>
-</div>
-</div>
-
+  <div id="setup" class="modal">
+    <div class="box">
+      <h3>Connect Account</h3>
+      <div>Betting Site: <b>Paripesa</b></div>
+      <input id="phone" placeholder="German phone (+49...)" />
+      <button onclick="save()">Save</button>
+    </div>
+  </div>
 </div>
 
 <script>
-
 const predict=document.getElementById("predict");
 const road=document.getElementById("road");
 const setup=document.getElementById("setup");
 
+// restore session
 if(localStorage.phone){
-setup.style.display="none";
-predict.disabled=false;
+  setup.style.display="none";
+  predict.disabled=false;
 }
 
+// save German phone once
 function save(){
-let phone=document.getElementById("phone").value.trim();
-
-if(!/^(\+49|0)\d{9,13}$/.test(phone)){
-alert("German number only");
-return;
-}
-
-localStorage.phone=phone;
-setup.style.display="none";
-predict.disabled=false;
+  let phone=document.getElementById("phone").value.trim();
+  if(!/^(\+49|0)\d{9,13}$/.test(phone)){
+    alert("German number only");
+    return;
+  }
+  localStorage.phone=phone;
+  setup.style.display="none";
+  predict.disabled=false;
 }
 
 let busy=false;
 
 predict.onclick=async()=>{
+  if(busy) return;
+  busy=true;
+  predict.disabled=true;
+  road.innerHTML="";
 
-if(busy)return;
-busy=true;
-predict.disabled=true;
-road.innerHTML="";
+  // CROSS profile: min 8, normal 8–14, rare 18–25 (~5%)
+  let rare = Math.random() < 0.05;
+  let crosses = rare ? rand(18,25) : rand(8,14);
 
-let rare=Math.random()<0.08;
-let crosses=rare?rand(16,20):rand(3,8);
+  // patient crossing
+  for(let i=0;i<crosses;i++){
+    await wait(rand(3000,5000));
+    if(navigator.vibrate) navigator.vibrate(300);
+    let d=document.createElement("div");
+    d.className="step";
+    d.textContent="🐔 CROSS";
+    road.appendChild(d);
+    road.scrollTop=99999;
+  }
 
-for(let i=0;i<crosses;i++){
+  await wait(1200);
 
-await wait(rand(3000,5000));
+  let c=document.createElement("div");
+  c.className="cashout";
+  c.textContent="💰 CASHOUT";
+  road.appendChild(c);
 
-navigator.vibrate?.(300);
+  // SMART COOLDOWN SCALING
+  // bigger runs = longer cooldown
+  let cooldown;
+  if(crosses >= 18){
+    cooldown = rand(75,120);        // rare / huge run
+  }else if(crosses >= 12){
+    cooldown = rand(45,75);         // medium run
+  }else{
+    cooldown = rand(30,45);         // small run
+  }
 
-let d=document.createElement("div");
-d.className="step";
-d.textContent="🐔 CROSS";
-road.appendChild(d);
-road.scrollTop=9999;
-}
+  let cd=cooldown;
+  const original="PREDICT";
 
-await wait(1500);
-
-let c=document.createElement("div");
-c.className="cashout";
-c.textContent="💰 CASHOUT";
-road.appendChild(c);
-
-let cd=rand(30,60);
-
-let timer=setInterval(()=>{
-predict.textContent="Cooldown "+cd+"s";
-cd--;
-if(cd<0){
-clearInterval(timer);
-predict.textContent="PREDICT";
-predict.disabled=false;
-busy=false;
-}
-},1000);
-
+  let timer=setInterval(()=>{
+    predict.textContent="Cooldown "+cd+"s";
+    cd--;
+    if(cd<0){
+      clearInterval(timer);
+      predict.textContent=original;
+      predict.disabled=false;
+      busy=false;
+    }
+  },1000);
 };
 
 function wait(ms){return new Promise(r=>setTimeout(r,ms))}
 function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
-
 </script>
 
 </body>
